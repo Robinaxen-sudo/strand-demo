@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verified by Strand – Bevattning och gräsmattor (designförslag)</title>
+<meta name="description" content="Vi projekterar, installerar och sköter bevattningsanläggningar och gräsytor åt villor, föreningar och idrottsanläggningar.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --bg:#07130e;
+  --bg2:#0b1d15;
+  --card:#0f2a1e;
+  --ink:#eef6f0;
+  --muted:#9db8a8;
+  --line:rgba(255,255,255,.1);
+  --lime:#b6f23a;
+  --aqua:#3ee0c8;
+  --water:#5fd0ff;
+  --paper:#f5f8f2;
+  --dark:#0a1f16;
+  --radius:22px;
+  --shadow:0 30px 80px -30px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;line-height:1.08;letter-spacing:-.02em}
+.wrap{width:min(1200px,92%);margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:.6rem;font-size:.78rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--lime)}
+.eyebrow::before{content:"";width:28px;height:2px;background:var(--lime);border-radius:2px}
+.btn{display:inline-flex;align-items:center;gap:.6rem;padding:.95rem 1.6rem;border-radius:999px;font-weight:600;font-size:.95rem;border:1px solid transparent;cursor:pointer;transition:.3s cubic-bezier(.2,.8,.2,1);font-family:inherit}
+.btn-primary{background:var(--lime);color:#0b1d15;box-shadow:0 10px 40px -10px rgba(182,242,58,.6)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 18px 50px -10px rgba(182,242,58,.8)}
+.btn-ghost{border-color:rgba(255,255,255,.3);color:#fff;backdrop-filter:blur(8px);background:rgba(255,255,255,.06)}
+.btn-ghost:hover{background:rgba(255,255,255,.16);transform:translateY(-3px)}
+.arrow{transition:transform .3s}
+.btn:hover .arrow{transform:translateX(4px)}
+
+/* Demo ribbon */
+.demo-bar{position:fixed;bottom:16px;left:16px;z-index:100;background:rgba(10,31,22,.9);backdrop-filter:blur(10px);border:1px solid var(--line);color:var(--muted);font-size:.72rem;padding:.5rem .9rem;border-radius:999px;display:flex;gap:.5rem;align-items:center}
+.demo-bar i{width:8px;height:8px;border-radius:50%;background:var(--lime);display:block;animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(182,242,58,.6)}100%{box-shadow:0 0 0 10px rgba(182,242,58,0)}}
+
+/* Nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;transition:.4s}
+nav .bar{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 0}
+nav.scrolled{background:rgba(7,19,14,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+nav.scrolled .bar{padding:.7rem 0}
+.logo{display:flex;align-items:center;gap:.7rem;font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem}
+.logo-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--lime),var(--aqua));display:grid;place-items:center;color:#06140d}
+.logo small{display:block;font-family:'Inter';font-size:.62rem;font-weight:600;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-top:-4px}
+.menu{display:flex;gap:1.6rem;align-items:center;font-size:.92rem;font-weight:500}
+.menu a:not(.btn){color:rgba(255,255,255,.8);position:relative}
+.menu a:not(.btn)::after{content:"";position:absolute;left:0;bottom:-6px;height:2px;width:0;background:var(--lime);transition:.3s}
+.menu a:not(.btn):hover::after{width:100%}
+.menu .btn{padding:.65rem 1.2rem}
+.burger{display:none;background:none;border:0;color:#fff;font-size:1.6rem;cursor:pointer}
+
+/* Hero */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;padding:8rem 0 6rem}
+.hero-bg{position:absolute;inset:0;background:url('https://verifiedbystrand.com/cdn/shop/files/IMG_3082.jpg?v=1785255862&width=1800') center/cover;transform:scale(1.1);will-change:transform}
+.hero::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(ellipse at 20% 40%,rgba(7,19,14,.55),transparent 60%),
+  linear-gradient(180deg,rgba(7,19,14,.55) 0%,rgba(7,19,14,.75) 55%,var(--bg) 100%)}
+#water{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.hero .wrap{position:relative;z-index:2}
+.hero h1{font-size:clamp(2.6rem,6.4vw,5.6rem);max-width:15ch;margin:1.2rem 0 1.5rem}
+.hero h1 em{font-style:italic;background:linear-gradient(90deg,var(--lime),var(--aqua));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:clamp(1.05rem,1.6vw,1.3rem);color:rgba(255,255,255,.82);max-width:56ch;margin-bottom:2.2rem}
+.hero .cta{display:flex;gap:1rem;flex-wrap:wrap}
+.chips{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:3rem}
+.chip{display:flex;align-items:center;gap:.55rem;font-size:.85rem;font-weight:500;padding:.55rem 1rem;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px)}
+.chip svg{color:var(--lime);flex:none}
+.scroll-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:2;width:26px;height:44px;border:2px solid rgba(255,255,255,.4);border-radius:20px}
+.scroll-hint::after{content:"";position:absolute;top:8px;left:50%;width:4px;height:8px;margin-left:-2px;background:#fff;border-radius:3px;animation:wheel 1.8s infinite}
+@keyframes wheel{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(16px)}}
+
+/* Marquee */
+.marquee{border-block:1px solid var(--line);background:var(--bg2);overflow:hidden;padding:1.3rem 0}
+.track{display:flex;gap:3.5rem;width:max-content;animation:slide 40s linear infinite}
+.track span{font-family:'Fraunces',serif;font-size:1.35rem;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:3.5rem}
+.track span::after{content:"✦";color:var(--lime);font-size:.9rem}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+section{padding:7rem 0;position:relative}
+.sec-head{max-width:760px;margin-bottom:3.5rem}
+.sec-head h2{font-size:clamp(2rem,4.2vw,3.4rem);margin:1rem 0 1rem}
+.sec-head p{color:var(--muted);font-size:1.1rem}
+
+/* Services */
+.services{display:grid;grid-template-columns:1fr 1fr;gap:1.6rem}
+.svc{position:relative;border-radius:var(--radius);overflow:hidden;min-height:560px;display:flex;align-items:flex-end;isolation:isolate;box-shadow:var(--shadow)}
+.svc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.svc::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,19,14,0) 20%,rgba(7,19,14,.92) 80%)}
+.svc:hover img{transform:scale(1.08)}
+.svc .in{padding:2.2rem}
+.svc .num{font-family:'Fraunces';font-size:.95rem;color:var(--lime);letter-spacing:.1em}
+.svc h3{font-size:2rem;margin:.4rem 0 .8rem}
+.svc p{color:rgba(255,255,255,.8);margin-bottom:1.2rem}
+.svc ul{list-style:none;display:grid;gap:.5rem;margin-bottom:1.6rem}
+.svc li{display:flex;gap:.6rem;align-items:center;font-size:.95rem}
+.svc li::before{content:"";width:18px;height:18px;border-radius:50%;background:var(--lime) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b1d15' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/11px no-repeat;flex:none}
+.link{display:inline-flex;gap:.5rem;align-items:center;font-weight:600;color:var(--lime)}
+.link:hover .arrow{transform:translateX(5px)}
+
+/* Stats */
+.stats{background:linear-gradient(135deg,#0e3a27,#0a2a3a);border-block:1px solid var(--line);padding:5rem 0;overflow:hidden}
+.stats::before{content:"";position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(62,224,200,.18),transparent 70%);top:-200px;right:-100px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;position:relative}
+.stat{text-align:center;padding:1rem}
+.stat b{display:block;font-family:'Fraunces';font-size:clamp(2.8rem,5vw,4.4rem);line-height:1;background:linear-gradient(180deg,#fff,var(--lime));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat span{display:block;margin-top:.6rem;color:var(--muted);font-size:.95rem}
+
+/* Process */
+.process{background:var(--paper);color:var(--dark)}
+.process .sec-head p{color:#4c6354}
+.process .eyebrow{color:#2d7a2d}.process .eyebrow::before{background:#2d7a2d}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4rem;counter-reset:s;position:relative}
+.step{background:#fff;border-radius:var(--radius);padding:2rem 1.7rem;border:1px solid #e1eadf;transition:.4s;position:relative;counter-increment:s}
+.step:hover{transform:translateY(-8px);box-shadow:0 30px 60px -30px rgba(10,60,30,.35);border-color:var(--lime)}
+.step::before{content:"0" counter(s);font-family:'Fraunces';font-size:3.2rem;font-weight:700;color:#dcebd0;line-height:1;display:block;margin-bottom:1rem;transition:.4s}
+.step:hover::before{color:var(--lime);-webkit-text-stroke:0}
+.step h3{font-size:1.3rem;margin-bottom:.6rem}
+.step p{color:#55695c;font-size:.95rem}
+
+/* References */
+.refs{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:1.4rem}
+.ref{position:relative;border-radius:var(--radius);overflow:hidden;min-height:480px;display:flex;align-items:flex-end;isolation:isolate}
+.ref img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform 1.2s}
+.ref::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 35%,rgba(5,15,10,.95))}
+.ref:hover img{transform:scale(1.07)}
+.ref .in{padding:1.8rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:.35rem .8rem;border-radius:999px;background:var(--lime);color:#0b1d15;margin-bottom:.9rem}
+.ref h3{font-size:1.2rem;line-height:1.3;font-family:'Inter';font-weight:600;letter-spacing:0}
+
+/* Shop */
+.shop{background:var(--bg2)}
+.shop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem}
+.prod{border:1px solid var(--line);border-radius:var(--radius);padding:2rem;background:linear-gradient(160deg,var(--card),#0a1b14);transition:.4s;position:relative;overflow:hidden}
+.prod::before{content:"";position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(182,242,58,.18),transparent 70%);top:-80px;right:-80px;transition:.5s}
+.prod:hover{transform:translateY(-8px);border-color:rgba(182,242,58,.5)}
+.prod:hover::before{transform:scale(1.8)}
+.prod .ico{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:rgba(182,242,58,.12);color:var(--lime);margin-bottom:1.4rem}
+.prod h3{font-size:1.5rem;margin-bottom:.6rem}
+.prod p{color:var(--muted);margin-bottom:1.4rem;font-size:.97rem}
+.shop-cta{margin-top:2.5rem;display:flex;gap:1rem;flex-wrap:wrap}
+
+/* Quote */
+.quote{background:radial-gradient(ellipse at 80% 0,rgba(62,224,200,.12),transparent 55%),var(--bg)}
+.q-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:4rem;align-items:start}
+.q-info h2{font-size:clamp(2rem,4vw,3.2rem);margin:1rem 0 1.2rem}
+.q-info>p{color:var(--muted);font-size:1.08rem;margin-bottom:2rem}
+.q-list{list-style:none;display:grid;gap:.9rem;margin-bottom:2.2rem}
+.q-list li{display:flex;gap:.8rem;align-items:center}
+.q-list svg{color:var(--lime);flex:none}
+.phone-card{display:flex;align-items:center;gap:1rem;padding:1.2rem 1.4rem;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.04)}
+.phone-card .ico{width:48px;height:48px;border-radius:14px;background:var(--lime);color:#0b1d15;display:grid;place-items:center}
+.phone-card small{color:var(--muted);display:block;font-size:.8rem}
+.phone-card b{font-size:1.3rem;font-family:'Fraunces'}
+form{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:28px;padding:2.4rem;backdrop-filter:blur(14px);box-shadow:var(--shadow)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.field{margin-bottom:1rem;display:flex;flex-direction:column;gap:.4rem}
+label{font-size:.8rem;font-weight:600;color:var(--muted);letter-spacing:.04em}
+input,select,textarea{font:inherit;color:#fff;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem;transition:.25s;width:100%}
+select option{color:#000}
+textarea{min-height:110px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 4px rgba(182,242,58,.15)}
+form .btn{width:100%;justify-content:center;margin-top:.5rem}
+.fine{font-size:.78rem;color:var(--muted);margin-top:1rem;text-align:center}
+.ok{display:none;text-align:center;padding:3rem 1rem}
+.ok h3{font-size:1.8rem;margin:1rem 0 .5rem}
+.ok .tick{width:72px;height:72px;border-radius:50%;background:var(--lime);color:#0b1d15;display:grid;place-items:center;margin:auto}
+
+/* CTA */
+.final{padding:0 0 7rem}
+.final-card{position:relative;border-radius:34px;overflow:hidden;padding:6rem 3rem;text-align:center;isolation:isolate}
+.final-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.final-card::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(135deg,rgba(7,19,14,.9),rgba(10,60,40,.75))}
+.final-card h2{font-size:clamp(2rem,4.6vw,3.8rem);max-width:18ch;margin:1rem auto 1.2rem}
+.final-card p{color:rgba(255,255,255,.8);max-width:52ch;margin:0 auto 2rem;font-size:1.1rem}
+.final-card .cta{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+
+/* Footer */
+footer{border-top:1px solid var(--line);padding:4rem 0 2rem;background:#050e0a}
+.f-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr;gap:2.5rem}
+footer h4{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--lime);margin-bottom:1rem}
+footer ul{list-style:none;display:grid;gap:.6rem;color:var(--muted);font-size:.93rem}
+footer ul a:hover{color:#fff}
+.f-about p{color:var(--muted);margin-top:1rem;font-size:.93rem;max-width:34ch}
+.copy{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;color:var(--muted);font-size:.82rem}
+
+/* Before / After */
+.ba-sec{background:var(--bg)}
+.ba{position:relative;aspect-ratio:16/8;min-height:300px;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);--pos:50%;user-select:none;touch-action:pan-y;border:1px solid var(--line)}
+.ba img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ba .dry{filter:sepia(1) saturate(1.1) hue-rotate(-22deg) brightness(.78) contrast(.95)}
+.ba-before{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.ba-handle{position:absolute;top:0;bottom:0;left:var(--pos);width:3px;background:#fff;transform:translateX(-50%);box-shadow:0 0 20px rgba(0,0,0,.5);pointer-events:none}
+.ba-handle::after{content:"↔";position:absolute;top:50%;left:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--lime);color:#0b1d15;display:grid;place-items:center;font-weight:700;font-size:1.3rem;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.ba input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:ew-resize;margin:0;-webkit-appearance:none;appearance:none}
+.ba-label{position:absolute;top:1rem;padding:.4rem .9rem;border-radius:999px;font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:rgba(7,19,14,.75);backdrop-filter:blur(8px);pointer-events:none}
+.ba-label.l{left:1rem}.ba-label.r{right:1rem;background:var(--lime);color:#0b1d15}
+.ba-note{margin-top:1rem;font-size:.8rem;color:var(--muted);display:flex;gap:.5rem;align-items:center}
+.ba-note::before{content:"i";width:18px;height:18px;border-radius:50%;border:1px solid var(--muted);display:grid;place-items:center;font-size:.7rem;flex:none}
+
+/* Map */
+.map-sec{background:var(--bg2);border-block:1px solid var(--line)}
+.map-bar{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:1rem}
+.map-bar input{flex:1;min-width:220px}
+.map-bar .btn{padding:.8rem 1.3rem}
+.map-wrap{position:relative;isolation:isolate;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+#map{height:520px;width:100%;background:#0b1d15}
+.map-hud{position:absolute;top:14px;right:14px;z-index:600;display:flex;gap:.7rem}
+.map-hud div{background:rgba(7,19,14,.88);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;padding:.7rem 1rem;min-width:110px}
+.map-hud b{display:block;font-family:'Fraunces';font-size:1.5rem;color:var(--lime);line-height:1.1}
+.map-hud span{font-size:.72rem;color:var(--muted)}
+.map-actions{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1rem;align-items:center}
+.map-actions .btn{padding:.8rem 1.3rem}
+.map-msg{color:var(--muted);font-size:.9rem;margin-top:.8rem;min-height:1.4em}
+.vtx{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--lime);box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:grab}
+
+/* Booking */
+.book-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:3rem;align-items:start}
+.cal{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:26px;padding:1.6rem;backdrop-filter:blur(12px)}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem}
+.cal-head b{font-family:'Fraunces';font-size:1.4rem}
+.cal-nav{display:flex;gap:.4rem}
+.cal-nav button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;font-size:1.1rem;cursor:pointer;transition:.25s}
+.cal-nav button:hover:not(:disabled){background:var(--lime);color:#0b1d15}
+.cal-nav button:disabled{opacity:.3;cursor:not-allowed}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.4rem}
+.cal-grid .dow{font-size:.72rem;color:var(--muted);text-align:center;padding:.3rem 0;text-transform:uppercase;letter-spacing:.08em}
+.cal-grid button{aspect-ratio:1;border-radius:12px;border:1px solid transparent;background:rgba(255,255,255,.06);color:#fff;font:inherit;font-weight:500;cursor:pointer;transition:.2s;position:relative}
+.cal-grid button:hover:not(:disabled){border-color:var(--lime);background:rgba(182,242,58,.12)}
+.cal-grid button:disabled{background:transparent;color:rgba(255,255,255,.25);cursor:not-allowed}
+.cal-grid button.full{text-decoration:line-through}
+.cal-grid button.sel{background:var(--lime);color:#0b1d15;font-weight:700;box-shadow:0 8px 24px -8px rgba(182,242,58,.7)}
+.cal-legend{display:flex;gap:1.2rem;margin-top:1rem;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin:1.2rem 0}
+.slot{padding:.9rem;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;font:inherit;font-weight:600;cursor:pointer;transition:.25s}
+.slot:hover{border-color:var(--lime)}
+.slot.sel{background:var(--lime);color:#0b1d15;border-color:var(--lime)}
+.sum{padding:1rem 1.2rem;border-radius:14px;background:rgba(182,242,58,.08);border:1px dashed rgba(182,242,58,.4);margin-bottom:1.2rem;font-size:.95rem}
+.check{display:flex;gap:.7rem;align-items:flex-start;font-size:.9rem;color:var(--muted);margin:.4rem 0 1rem;cursor:pointer}
+.check input{width:auto;margin-top:.25rem;accent-color:var(--lime)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none!important}
+@media(max-width:980px){.book-grid{grid-template-columns:1fr}.ba{aspect-ratio:4/3}#map{height:420px}.map-hud{top:8px;right:8px}.map-hud div{min-width:90px;padding:.5rem .7rem}.map-hud b{font-size:1.15rem}}
+
+/* Region */
+.region{background:var(--bg2);border-block:1px solid var(--line)}
+.region-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.region h2{font-size:clamp(2rem,4vw,3.2rem);margin:1rem 0 1.2rem}
+.region p{color:var(--muted);font-size:1.08rem}
+.pills{display:flex;flex-wrap:wrap;gap:.7rem}
+.pill{padding:.7rem 1.2rem;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-weight:500;transition:.3s;display:flex;align-items:center;gap:.5rem}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--lime)}
+.pill:hover{border-color:var(--lime);transform:translateY(-3px);background:rgba(182,242,58,.08)}
+.pill.big{background:var(--lime);color:#0b1d15;border-color:var(--lime);font-weight:700}
+.pill.big::before{background:#0b1d15}
+
+/* FAQ */
+.faq-list{max-width:860px;display:grid;gap:.9rem}
+.faq-list details{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.04);padding:0 1.5rem;transition:.3s}
+.faq-list details[open]{border-color:rgba(182,242,58,.5);background:rgba(182,242,58,.05)}
+.faq-list summary{cursor:pointer;list-style:none;padding:1.3rem 0;font-weight:600;font-size:1.05rem;display:flex;justify-content:space-between;gap:1rem;align-items:center}
+.faq-list summary::-webkit-details-marker{display:none}
+.faq-list summary::after{content:"+";font-size:1.6rem;color:var(--lime);transition:.3s;line-height:1}
+.faq-list details[open] summary::after{transform:rotate(45deg)}
+.faq-list details p{color:var(--muted);padding-bottom:1.3rem}
+
+/* Mobile call bar */
+.callbar{display:none}
+@media(max-width:980px){
+  .region-grid{grid-template-columns:1fr;gap:2rem}
+  .callbar{display:flex;position:fixed;left:12px;right:12px;bottom:12px;z-index:90;gap:.6rem}
+  .callbar a{flex:1;justify-content:center;padding:.9rem 1rem;box-shadow:0 12px 40px -8px rgba(0,0,0,.6)}
+  .callbar .btn-ghost{background:rgba(10,31,22,.92)}
+  body{padding-bottom:84px}
+}
+
+/* Reveal */
+.rv{opacity:0;transform:translateY(40px);transition:opacity 1s cubic-bezier(.2,.8,.2,1),transform 1s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}
+
+@media(max-width:980px){
+  .menu{position:fixed;inset:0 0 auto 0;top:0;flex-direction:column;justify-content:center;gap:1.6rem;height:100vh;background:rgba(7,19,14,.97);font-size:1.3rem;transform:translateY(-100%);transition:.5s;z-index:-1}
+  .menu.open{transform:none}
+  .burger{display:block;z-index:60}
+  .services,.q-grid,.shop-grid,.refs{grid-template-columns:1fr}
+  .steps,.stat-grid{grid-template-columns:1fr 1fr}
+  .f-grid{grid-template-columns:1fr 1fr}
+  .svc{min-height:500px}.ref{min-height:380px}
+  section{padding:5rem 0}
+}
+@media(max-width:560px){
+  .steps,.stat-grid,.f-grid,.row{grid-template-columns:1fr}
+  form{padding:1.6rem}
+  .final-card{padding:4rem 1.4rem}
+  .demo-bar{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="demo-bar"><i></i> Designförslag – demo</div>
+
+<div class="callbar">
+  <a class="btn btn-primary" href="tel:+46733126579">📞 Ring oss</a>
+  <a class="btn btn-ghost" href="#offert">Begär offert</a>
+</div>
+
+<nav id="nav">
+  <div class="wrap bar">
+    <a href="#top" class="logo">
+      <span class="logo-mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg>
+      </span>
+      <span>Verified by Strand<small>Bevattning &amp; Gräs</small></span>
+    </a>
+    <button class="burger" id="burger" aria-label="Meny">☰</button>
+    <div class="menu" id="menu">
+      <a href="#tjanster">Tjänster</a>
+      <a href="#referenser">Referenser</a>
+      <a href="#karta">Rita din yta</a>
+      <a href="#boka">Vinteravstängning</a>
+      <a href="#butik">Butik</a>
+      <a href="#faq">Frågor</a>
+      <a href="#offert" class="btn btn-primary">Begär offert</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-bg" id="heroBg"></div>
+  <canvas id="water"></canvas>
+  <div class="wrap">
+    <span class="eyebrow rv">Bevattning &amp; gräsmattor i hela Sverige</span>
+    <h1 class="rv d1">Bevattning och gräs som <em>får utemiljön</em> att blomma.</h1>
+    <p class="lead rv d2">Vi projekterar, installerar och sköter bevattningsanläggningar och gräsytor åt villor, föreningar, idrottsanläggningar och offentlig miljö – med en kontakt från första ritning till färdig säsong.</p>
+    <div class="cta rv d3">
+      <a href="#offert" class="btn btn-primary">Begär kostnadsfri offert <span class="arrow">→</span></a>
+      <a href="#butik" class="btn btn-ghost">Maskiner &amp; produkter</a>
+    </div>
+    <div class="chips rv d3">
+      <div class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Kostnadsfri offert</div>
+      <div class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Egen installation och service</div>
+      <div class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Referenser i hela Sverige</div>
+      <div class="chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Maskiner, frö och gödsel på lager</div>
+    </div>
+  </div>
+  <div class="scroll-hint"></div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track">
+    <span>Bevattning</span><span>Gräsmattor</span><span>Dressning</span><span>Luftning</span><span>Stödsådd</span><span>Gödsling</span><span>GeoRipper</span><span>Skånefrö</span>
+    <span>Bevattning</span><span>Gräsmattor</span><span>Dressning</span><span>Luftning</span><span>Stödsådd</span><span>Gödsling</span><span>GeoRipper</span><span>Skånefrö</span>
+  </div>
+</div>
+
+<section id="tjanster">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Våra tjänster</span>
+      <h2>Från projektering till färdig anläggning</h2>
+      <p>Vi gör både bevattningen och gräset, så du har en och samma kontakt från första ritningen till skötseln varje säsong.</p>
+    </div>
+    <div class="services">
+      <article class="svc rv">
+        <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3409.png?v=1785250637&width=1200" alt="GeoRipper gräver ett smalt dike i en trädgård" loading="lazy">
+        <div class="in">
+          <span class="num">01</span>
+          <h3>Bevattningsinstallation</h3>
+          <p>Automatisk bevattning som ger jämn spridning över hela ytan, med rätt tryck och rätt antal spridare från början.</p>
+          <ul>
+            <li>Projektering och spridarplacering</li>
+            <li>Installation och driftsättning</li>
+            <li>Service, garanti och vinteravstängning</li>
+          </ul>
+          <a href="#offert" class="link">Begär offert <span class="arrow">→</span></a>
+        </div>
+      </article>
+      <article class="svc rv d1">
+        <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3626.jpg?v=1788505837&width=1200" alt="Luftningsvals och gräsklippare på en randig gräsmatta" loading="lazy">
+        <div class="in">
+          <span class="num">02</span>
+          <h3>Gräsmattetjänster</h3>
+          <p>Vi anlägger, renoverar och sköter gräsytor med rätt produkt vid rätt tidpunkt.</p>
+          <ul>
+            <li>Anläggning och renovering</li>
+            <li>Dressning, luftning och stödsådd</li>
+            <li>Gödsling och säsongsskötsel</li>
+          </ul>
+          <a href="#offert" class="link">Begär offert <span class="arrow">→</span></a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="wrap stat-grid">
+    <div class="stat rv"><b data-count="5">0</b><span>Idrottsanläggningar</span></div>
+    <div class="stat rv d1"><b data-count="4">0</b><span>Golfbanor</span></div>
+    <div class="stat rv d2"><b data-count="4">0</b><span>GeoRipper-modeller i butiken</span></div>
+    <div class="stat rv d3"><b>0 kr</b><span>Kostnad för offerten</span></div>
+  </div>
+</div>
+
+<section class="process" id="process">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Så jobbar vi</span>
+      <h2>Enkelt för dig. Genomtänkt för ytan.</h2>
+      <p>Berätta om din yta – resten tar vi hand om.</p>
+    </div>
+    <div class="steps">
+      <div class="step rv"><h3>Berätta om ytan</h3><p>Fyll i formuläret eller ring. Skicka gärna en ritning eller tomtkarta.</p></div>
+      <div class="step rv d1"><h3>Förslag &amp; pris</h3><p>Vi tittar på ytan, föreslår en lösning och ger dig ett pris. Utan förpliktelser.</p></div>
+      <div class="step rv d2"><h3>Installation</h3><p>Egen personal projekterar och installerar – rätt tryck, rätt spridare.</p></div>
+      <div class="step rv d3"><h3>Service &amp; skötsel</h3><p>Garanti, vinteravstängning och säsongsskötsel så att resultatet håller.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="referenser">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Referenser</span>
+      <h2>Anläggningar som redan litar på oss</h2>
+      <p>Ett urval av de ytor vi projekterat, installerat och sköter om.</p>
+    </div>
+    <div class="refs">
+      <article class="ref rv">
+        <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3566.jpg?v=1788505798&width=1000" alt="Nyanlagd gräsmatta med stålkant" loading="lazy">
+        <div class="in"><span class="tag">Idrottsanläggning</span><h3>Vellinge kommun, Simrishamns IP, Lödde IP, Gärsnäs IP, Lunnarps IP</h3></div>
+      </article>
+      <article class="ref rv d1">
+        <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3775.png?v=1788505745&width=1000" alt="Randigt klippt gräsmatta med rosa blommor" loading="lazy">
+        <div class="in"><span class="tag">Golfbana</span><h3>Eslövs GK, Örestads GK, St Jörgen park GK, Kävlinge GK</h3></div>
+      </article>
+      <article class="ref rv d2">
+        <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3082.jpg?v=1785255862&width=1000" alt="Villaträdgård med stenmur och rabatter" loading="lazy">
+        <div class="in"><span class="tag">Privat &amp; offentligt</span><h3>Privata trädgårdar, parker, ridanläggningar, tennisbanor och kyrkogårdar</h3></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="ba-sec" id="resultat">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Resultat</span>
+      <h2>Se skillnaden – dra i reglaget</h2>
+      <p>En gräsyta som fått rätt bevattning och skötsel ser ut och mår helt annorlunda.</p>
+    </div>
+    <div class="rv">
+      <div class="ba" id="ba">
+        <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3566.jpg?v=1788505798&width=1600" alt="Efter: nyanlagd gräsmatta" loading="lazy">
+        <div class="ba-before"><img class="dry" src="https://verifiedbystrand.com/cdn/shop/files/IMG_3566.jpg?v=1788505798&width=1600" alt="Före: torr gräsyta" loading="lazy"></div>
+        <span class="ba-label l">Före</span>
+        <span class="ba-label r">Efter</span>
+        <div class="ba-handle"></div>
+        <input type="range" min="0" max="100" value="50" aria-label="Dra för att jämföra före och efter" id="baRange">
+      </div>
+      <p class="ba-note">Exempelbild i demon: "Före" är en tonad version av samma foto. Byts mot riktiga före/efter-bilder från era jobb.</p>
+    </div>
+  </div>
+</section>
+
+<section class="region" id="omrade">
+  <div class="wrap region-grid">
+    <div class="rv">
+      <span class="eyebrow">Här jobbar vi</span>
+      <h2>Starkast i Skåne – uppdrag i hela Sverige</h2>
+      <p>Merparten av våra anläggningar finns i Skåne, där vi har kort väg till både service och leverans. Vi tar också uppdrag och har referenser i resten av landet.</p>
+    </div>
+    <div class="pills rv d1">
+      <span class="pill big">Skåne</span>
+      <span class="pill">Vellinge</span>
+      <span class="pill">Simrishamn</span>
+      <span class="pill">Lödde</span>
+      <span class="pill">Gärsnäs</span>
+      <span class="pill">Lunnarp</span>
+      <span class="pill">Eslöv</span>
+      <span class="pill">Örestad</span>
+      <span class="pill">Kävlinge</span>
+      <span class="pill big">Hela Sverige</span>
+    </div>
+  </div>
+</section>
+
+<section class="shop" id="butik">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Butiken</span>
+      <h2>Maskinerna vi själva jobbar med</h2>
+      <p>GeoRipper minitrencher, maskiner för grönyteskötsel, gräsfrö och gödsel. Maskiner offereras, tillbehör och reservdelar köper du direkt.</p>
+    </div>
+    <div class="shop-grid">
+      <a class="prod rv" href="https://verifiedbystrand.com/pages/georipper">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></div>
+        <h3>GeoRipper</h3><p>Minitrencher som gräver smala diken snabbt och skonsamt mot gräsytan.</p>
+        <span class="link">Se produkterna <span class="arrow">→</span></span>
+      </a>
+      <a class="prod rv d1" href="https://verifiedbystrand.com/collections/othmerding-landskaps">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c0-8 6-14 18-16-1 12-7 18-15 18"/><path d="M3 21l9-9"/></svg></div>
+        <h3>Othmerding Landskaps</h3><p>Gräsvårdsprodukter från Earth and Turf för en tät och frisk gräsyta.</p>
+        <span class="link">Se produkterna <span class="arrow">→</span></span>
+      </a>
+      <a class="prod rv d2" href="https://verifiedbystrand.com/collections/skanefro">
+        <div class="ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V10"/><path d="M12 10c0-4 3-6 6-6 0 4-2 6-6 6z"/><path d="M12 14c0-3-2-5-5-5 0 3 2 5 5 5z"/></svg></div>
+        <h3>Skånefrö</h3><p>Gräsfrö för nysådd, renovering och stödsådd – på lager.</p>
+        <span class="link">Se produkterna <span class="arrow">→</span></span>
+      </a>
+    </div>
+    <div class="shop-cta rv">
+      <a class="btn btn-primary" href="https://verifiedbystrand.com/collections">Hela butiken <span class="arrow">→</span></a>
+      <a class="btn btn-ghost" href="https://www.instagram.com/aosolarsystemsab/">Följ oss på Instagram</a>
+    </div>
+  </div>
+</section>
+
+<section class="map-sec" id="karta">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Rita din yta</span>
+      <h2>Rita din gräsyta på kartan – vi räknar ut resten</h2>
+      <p>Sök din adress, klicka runt ytan på satellitkartan och få arean direkt. Måtten följer med din offertförfrågan, så slipper du skicka ritningar.</p>
+    </div>
+    <div class="rv">
+      <div class="map-bar">
+        <input id="addr" placeholder="Sök adress eller ort, t.ex. Vellinge" aria-label="Sök adress">
+        <button class="btn btn-primary" id="goBtn" type="button">Sök</button>
+        <button class="btn btn-ghost" id="locBtn" type="button">📍 Min plats</button>
+      </div>
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-hud">
+          <div><b id="areaOut">0 m²</b><span>Uppskattad yta</span></div>
+          <div><b id="perOut">0 m</b><span>Kantlängd</span></div>
+        </div>
+      </div>
+      <div class="map-actions">
+        <button class="btn btn-primary" id="drawBtn" type="button">✏️ Börja rita</button>
+        <button class="btn btn-ghost" id="undoBtn" type="button">↶ Ångra punkt</button>
+        <button class="btn btn-ghost" id="clearBtn" type="button">Rensa</button>
+        <button class="btn btn-ghost" id="useBtn" type="button" style="margin-left:auto;border-color:var(--lime);color:var(--lime)">Använd i offert →</button>
+      </div>
+      <p class="map-msg" id="mapMsg">Tryck på "Börja rita" och klicka på hörnen av ytan. Du kan dra i punkterna för att justera.</p>
+    </div>
+  </div>
+</section>
+
+<section id="boka">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Boka online</span>
+      <h2>Boka vinteravstängning på ett par klick</h2>
+      <p>Välj dag och tid, så avstängs bevattningen innan frosten. Vi kan påminna dig inför nästa säsong.</p>
+    </div>
+    <div class="book-grid">
+      <div class="cal rv">
+        <div class="cal-head"><b id="calTitle"></b><div class="cal-nav"><button id="calPrev" type="button" aria-label="Föregående månad">‹</button><button id="calNext" type="button" aria-label="Nästa månad">›</button></div></div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend"><span>● Vald dag</span><span style="text-decoration:line-through">Fullbokat</span><span>Endast vardagar</span></div>
+      </div>
+      <form id="bform" class="rv d1">
+        <div id="bfields">
+          <label>Tid på dagen</label>
+          <div class="slots">
+            <button class="slot" type="button" data-slot="Förmiddag">Förmiddag</button>
+            <button class="slot" type="button" data-slot="Eftermiddag">Eftermiddag</button>
+          </div>
+          <div class="sum" id="bsum">Välj en dag i kalendern och en tid.</div>
+          <div class="row">
+            <div class="field"><label for="bn">Namn</label><input id="bn" required placeholder="Ditt namn"></div>
+            <div class="field"><label for="bt">Telefon</label><input id="bt" type="tel" required placeholder="07x-xxx xx xx"></div>
+          </div>
+          <div class="field"><label for="ba2">Adress</label><input id="ba2" required placeholder="Där anläggningen finns"></div>
+          <label class="check"><input type="checkbox" id="brem" checked> Påminn mig varje höst om vinteravstängning</label>
+          <button class="btn btn-primary" id="bsubmit" type="submit" disabled>Boka vinteravstängning <span class="arrow">→</span></button>
+          <p class="fine">Demo: lediga dagar och tider är exempel och ingen riktig bokning görs ännu.</p>
+        </div>
+        <div class="ok" id="bok">
+          <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+          <h3>Tack, din förfrågan är mottagen!</h3>
+          <p id="bokTxt" style="color:var(--muted);margin-bottom:1.2rem"></p>
+          <a class="btn btn-ghost" id="icsBtn" download="vinteravstangning.ics">📅 Lägg i min kalender</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Vanliga frågor</span>
+      <h2>Bra att veta innan du hör av dig</h2>
+    </div>
+    <div class="faq-list rv">
+      <details><summary>Vad kostar en bevattningsanläggning?</summary><p>Det beror på ytans storlek, vattenkälla och hur tomten ser ut. Därför tar vi fram ett förslag och ett pris för just din yta. Offerten är kostnadsfri och utan förpliktelser.</p></details>
+      <details><summary>Hur snabbt får jag svar på min förfrågan?</summary><p>Vi svarar normalt inom ett par arbetsdagar. Vill du prata direkt kan du ringa 073-312 65 79.</p></details>
+      <details><summary>Kan jag skicka en ritning eller tomtkarta?</summary><p>Ja, gärna. Skicka in formuläret först och svara sedan på vårt mejl med ritningen bifogad, eller skicka en länk till den.</p></details>
+      <details><summary>Vilka jobbar ni åt?</summary><p>Villaägare, föreningar, idrottsanläggningar, golfbanor och offentlig miljö som parker, ridanläggningar, tennisbanor och kyrkogårdar.</p></details>
+      <details><summary>Hjälper ni till efter installationen?</summary><p>Ja. Vi erbjuder service, garanti och vinteravstängning, samt gräsmatteskötsel som dressning, luftning, stödsådd och gödsling.</p></details>
+      <details><summary>Kan jag köpa maskiner och gräsfrö av er?</summary><p>Ja. Vi säljer GeoRipper minitrencher, maskiner för grönyteskötsel, gräsfrö och gödsel. Maskiner offereras, tillbehör och reservdelar köper du direkt i butiken.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="quote" id="offert">
+  <div class="wrap q-grid">
+    <div class="q-info rv">
+      <span class="eyebrow">Offert</span>
+      <h2>Begär offert på bevattning</h2>
+      <p>Berätta kort om ytan så återkommer vi med ett förslag och ett pris. Vi svarar normalt inom ett par arbetsdagar.</p>
+      <ul class="q-list">
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Kostnadsfri offert och rådgivning</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Projektering, installation och service</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Vi svarar inom ett par arbetsdagar</li>
+      </ul>
+      <a href="tel:+46733126579" class="phone-card">
+        <span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg></span>
+        <span><small>Hellre prata direkt?</small><b>073-312 65 79</b></span>
+      </a>
+    </div>
+
+    <form id="qform" class="rv d1">
+      <div id="fields">
+        <div class="row">
+          <div class="field"><label for="n">Namn</label><input id="n" required placeholder="Ditt namn"></div>
+          <div class="field"><label for="t">Telefon</label><input id="t" type="tel" required placeholder="07x-xxx xx xx"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="a">Ort</label><input id="a" required placeholder="Var finns ytan?"></div>
+          <div class="field"><label for="y">Ungefärlig yta</label>
+            <select id="y"><option>Vet ej ännu</option><option>Under 500 m²</option><option>500–1 500 m²</option><option>1 500–5 000 m²</option><option>Över 5 000 m²</option></select></div>
+        </div>
+        <div class="field"><label for="m">Något vi bör veta? (valfritt)</label><textarea id="m" placeholder="T.ex. vattenkälla, önskemål eller länk till en ritning"></textarea></div>
+        <button class="btn btn-primary" type="submit">Skicka offertförfrågan <span class="arrow">→</span></button>
+        <p class="fine">Har du en ritning eller tomtkarta? Skicka formuläret först och svara sedan på vårt mejl med ritningen bifogad.<br>Inget nyhetsbrev, ingen vidareförsäljning.</p>
+      </div>
+      <div class="ok" id="ok">
+        <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+        <h3>Tack – vi hör av oss!</h3>
+        <p style="color:var(--muted)">(Demo: formuläret skickar inget på riktigt ännu.)</p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<div class="final">
+  <div class="wrap">
+    <div class="final-card rv">
+      <img src="https://verifiedbystrand.com/cdn/shop/files/IMG_3409.png?v=1785250637&width=1600" alt="" loading="lazy">
+      <span class="eyebrow">Nästa steg</span>
+      <h2>Berätta om din yta så hörs vi</h2>
+      <p>Vi tittar på ytan, föreslår en lösning och ger dig ett pris. Kostnadsfritt och utan förpliktelser.</p>
+      <div class="cta">
+        <a href="#offert" class="btn btn-primary">Begär offert <span class="arrow">→</span></a>
+        <a href="mailto:kristofer@verifiedbystrand.com" class="btn btn-ghost">Kontakta oss</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div class="f-about">
+        <a href="#top" class="logo"><span class="logo-mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg></span><span>Verified by Strand</span></a>
+        <p>Bevattning och gräsmattor för en grönare och vackrare utemiljö.</p>
+      </div>
+      <div><h4>Tjänster</h4><ul><li><a href="#tjanster">Bevattning och gräsmattor</a></li><li><a href="#referenser">Referenser</a></li><li><a href="#offert">Begär offert</a></li></ul></div>
+      <div><h4>Butik</h4><ul><li><a href="https://verifiedbystrand.com/pages/georipper">GeoRipper</a></li><li><a href="https://verifiedbystrand.com/collections/bevattning">Bevattningsprodukter</a></li><li><a href="https://verifiedbystrand.com/collections/othmerding-landskaps">Gräsvårdsprodukter</a></li><li><a href="https://verifiedbystrand.com/collections/skanefro">Skånefrö</a></li></ul></div>
+      <div><h4>Kontakt</h4><ul><li>Kristofer Strand</li><li><a href="tel:+46733126579">073-312 65 79</a></li><li><a href="mailto:kristofer@verifiedbystrand.com">kristofer@verifiedbystrand.com</a></li></ul></div>
+    </div>
+    <div class="copy"><span>© 2026 Verified by Strand AB · Vi använder dina uppgifter bara för att svara på din förfrågan.</span><span>Designförslag – demo</span></div>
+  </div>
+</footer>
+
+<script>
+// Nav
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>40),{passive:true});
+const burger=document.getElementById('burger'),menu=document.getElementById('menu');
+burger.onclick=()=>{menu.classList.toggle('open');burger.textContent=menu.classList.contains('open')?'✕':'☰'};
+menu.querySelectorAll('a').forEach(a=>a.onclick=()=>{menu.classList.remove('open');burger.textContent='☰'});
+
+// Parallax
+const bg=document.getElementById('heroBg');
+addEventListener('scroll',()=>{if(scrollY<innerHeight*1.2)bg.style.transform=`scale(1.1) translateY(${scrollY*.18}px)`},{passive:true});
+
+// Reveal
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+// Counters
+const co=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;
+  const el=e.target,end=+el.dataset.count,t0=performance.now();
+  const tick=t=>{const p=Math.min((t-t0)/1600,1);el.textContent=Math.round(end*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick)};
+  requestAnimationFrame(tick);co.unobserve(el);
+}),{threshold:.6});
+document.querySelectorAll('[data-count]').forEach(el=>co.observe(el));
+
+// Sprinkler water canvas
+(function(){
+  const c=document.getElementById('water'),x=c.getContext('2d');
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  let W,H,dpr=Math.min(devicePixelRatio||1,2),P=[],heads=[];
+  function size(){
+    W=c.clientWidth;H=c.clientHeight;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);
+    const n=W>900?4:2;heads=[];
+    for(let i=0;i<n;i++)heads.push({x:W*(i+.6)/(n+.2),y:H*.97,a:Math.random()*6,s:.012+Math.random()*.008});
+  }
+  size();addEventListener('resize',size);
+  function emit(h){
+    const ang=-Math.PI/2+Math.sin(h.a)*0.9;
+    const sp=7+Math.random()*3.5;
+    P.push({x:h.x,y:h.y,vx:Math.cos(ang)*sp+(Math.random()-.5)*.8,vy:Math.sin(ang)*sp*1.25,l:1,r:1+Math.random()*1.6});
+  }
+  function loop(){
+    x.clearRect(0,0,W,H);
+    heads.forEach(h=>{h.a+=h.s;for(let i=0;i<3;i++)emit(h);
+      x.fillStyle='rgba(182,242,58,.9)';x.beginPath();x.arc(h.x,h.y,4,0,7);x.fill();});
+    for(let i=P.length-1;i>=0;i--){
+      const p=P[i];p.vy+=.16;p.x+=p.vx;p.y+=p.vy;p.l-=.006;
+      if(p.y>H||p.l<=0){P.splice(i,1);continue}
+      x.fillStyle=`rgba(150,225,255,${Math.max(p.l,0)*.65})`;
+      x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+// Before / After slider
+(function(){
+  const ba=document.getElementById('ba'),r=document.getElementById('baRange');
+  const set=v=>{ba.style.setProperty('--pos',v+'%');r.value=v};
+  r.addEventListener('input',()=>{played=true;set(r.value)});
+  let played=false;
+  new IntersectionObserver((es,o)=>es.forEach(e=>{
+    if(!e.isIntersecting)return;o.disconnect();
+    const t0=performance.now();
+    (function step(t){
+      if(played)return;
+      const p=Math.min((t-t0)/2200,1);
+      set(50+Math.sin(p*Math.PI*2)*28*(1-p*.4));
+      if(p<1)requestAnimationFrame(step);else set(50);
+    })(t0);
+  }),{threshold:.5}).observe(ba);
+})();
+
+// Map drawing tool
+function mapMain(){
+  const msg=document.getElementById('mapMsg');
+  const map=L.map('map',{center:[55.62,13.4],zoom:9,maxZoom:19,doubleClickZoom:false});
+  const tiles=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles &copy; Esri'}).addTo(map);
+  let tileOk=false,tileErr=0;
+  tiles.on('tileload',()=>{tileOk=true});
+  tiles.on('tileerror',()=>{if(!tileOk&&++tileErr===4)msg.textContent='Satellitbilderna kunde inte hämtas. Kontrollera internetanslutningen eller stäng av annonsblockerare för den här sidan.'});
+  let drawing=false,pts=[],markers=[],poly=null,area=0,per=0;
+  const $=id=>document.getElementById(id);
+  const fmt=n=>Math.round(n).toLocaleString('sv-SE');
+  function calc(){
+    area=0;per=0;if(pts.length<2)return;
+    const R=6371000,lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length*Math.PI/180;
+    const xy=pts.map(p=>[R*p.lng*Math.PI/180*Math.cos(lat0),R*p.lat*Math.PI/180]);
+    for(let i=0;i<xy.length;i++){const a=xy[i],b=xy[(i+1)%xy.length];if(pts.length>2||i<xy.length-1)per+=Math.hypot(a[0]-b[0],a[1]-b[1])}
+    if(pts.length>2){let s=0;for(let i=0;i<xy.length;i++){const a=xy[i],b=xy[(i+1)%xy.length];s+=a[0]*b[1]-b[0]*a[1]}area=Math.abs(s)/2}
+  }
+  function redraw(){
+    if(poly){map.removeLayer(poly);poly=null}
+    if(pts.length>=2){poly=(pts.length>=3?L.polygon:L.polyline)(pts,{color:'#b6f23a',weight:3,fillColor:'#b6f23a',fillOpacity:.28}).addTo(map)}
+    calc();$('areaOut').textContent=fmt(area)+' m²';$('perOut').textContent=fmt(per)+' m';
+  }
+  function addPt(ll){
+    pts.push(ll);
+    const mk=L.marker(ll,{draggable:true,icon:L.divIcon({className:'vtx',iconSize:[16,16]})}).addTo(map);
+    mk.on('drag',()=>{pts[markers.indexOf(mk)]=mk.getLatLng();redraw()});
+    markers.push(mk);redraw();
+  }
+  map.on('click',e=>{if(drawing)addPt(e.latlng)});
+  function setDraw(on){
+    drawing=on;$('drawBtn').textContent=on?'✔ Klar med ritningen':'✏️ Börja rita';
+    map.getContainer().style.cursor=on?'crosshair':'';
+    if(on)msg.textContent='Klicka på hörnen av ytan. Minst tre punkter behövs.';
+  }
+  $('drawBtn').onclick=()=>{
+    if(drawing){setDraw(false);msg.textContent=pts.length>2?'Bra! Ca '+fmt(area)+' m². Tryck på "Använd i offert" när du är nöjd.':'Rita minst tre punkter för att få en yta.';}
+    else setDraw(true);
+  };
+  $('undoBtn').onclick=()=>{if(!pts.length)return;pts.pop();map.removeLayer(markers.pop());redraw()};
+  $('clearBtn').onclick=()=>{markers.forEach(m=>map.removeLayer(m));markers=[];pts=[];redraw();setDraw(false);msg.textContent='Ritningen är rensad.'};
+  async function go(){
+    const q=$('addr').value.trim();if(!q)return;msg.textContent='Söker…';
+    try{
+      const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=se&q='+encodeURIComponent(q));
+      const j=await r.json();
+      if(!j.length){msg.textContent='Hittade ingen plats. Prova en annan adress.';return}
+      map.setView([+j[0].lat,+j[0].lon],18);msg.textContent='Klart. Tryck på "Börja rita" och markera ytan.';
+    }catch(e){msg.textContent='Sökningen misslyckades. Zooma in manuellt på kartan.'}
+  }
+  $('goBtn').onclick=go;$('addr').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}});
+  $('locBtn').onclick=()=>{
+    if(!navigator.geolocation){msg.textContent='Din webbläsare stödjer inte platsinfo.';return}
+    msg.textContent='Hämtar din plats…';
+    navigator.geolocation.getCurrentPosition(p=>{map.setView([p.coords.latitude,p.coords.longitude],18);msg.textContent='Klart.'},()=>{msg.textContent='Kunde inte hämta din plats.'});
+  };
+  $('useBtn').onclick=()=>{
+    if(area<=0){msg.textContent='Rita en yta med minst tre punkter först.';return}
+    setDraw(false);
+    const sel=$('y'),a=Math.round(area);
+    const label=a<500?'Under 500 m²':a<=1500?'500–1 500 m²':a<=5000?'1 500–5 000 m²':'Över 5 000 m²';
+    [...sel.options].forEach(o=>{if(o.text===label)sel.value=o.value||o.text});
+    const c=poly.getBounds().getCenter(),lat=c.lat.toFixed(6),lng=c.lng.toFixed(6);
+    const line='Ritad yta på karta: ca '+fmt(area)+' m² (kantlängd ca '+fmt(per)+' m). Plats: https://www.openstreetmap.org/?mlat='+lat+'&mlon='+lng+'#map=19/'+lat+'/'+lng;
+    const m=$('m');m.value=line+'\n\n'+m.value.replace(/^Ritad yta[\s\S]*?\n\n/,'');
+    document.getElementById('offert').scrollIntoView({behavior:'smooth'});
+  };
+  new IntersectionObserver((es,o)=>es.forEach(e=>{if(e.isIntersecting){map.invalidateSize();o.disconnect()}}),{threshold:.1}).observe(document.getElementById('map'));
+}
+// Load Leaflet with fallbacks, then start the map
+(function(){
+  const msg=document.getElementById('mapMsg');
+  const srcs=['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js','https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
+  function start(){try{mapMain()}catch(e){msg.textContent='Kartfel: '+e.message}}
+  function next(i){
+    if(window.L){start();return}
+    if(i>=srcs.length){msg.textContent='Kartbiblioteket kunde inte laddas. En annonsblockerare eller sekretessinställning kan blockera det. Prova att öppna filen i Chrome eller Safari utan blockerare.';return}
+    const s=document.createElement('script');s.src=srcs[i];
+    s.onload=()=>{window.L?start():next(i+1)};s.onerror=()=>next(i+1);
+    document.head.appendChild(s);
+  }
+  next(0);
+})();
+
+// Winter shutdown booking
+(function(){
+  const $=id=>document.getElementById(id);
+  const MN=['Januari','Februari','Mars','April','Maj','Juni','Juli','Augusti','September','Oktober','November','December'];
+  const today=new Date();today.setHours(0,0,0,0);
+  let view=new Date(today.getFullYear(),today.getMonth(),1),sel=null,slot=null;
+  const maxView=new Date(today.getFullYear(),today.getMonth()+6,1);
+  const pad=n=>String(n).padStart(2,'0');
+  const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  function render(){
+    const y=view.getFullYear(),m=view.getMonth();
+    $('calTitle').textContent=MN[m]+' '+y;
+    $('calPrev').disabled=view<=new Date(today.getFullYear(),today.getMonth(),1);
+    $('calNext').disabled=view>=maxView;
+    const off=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();
+    let h=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'].map(d=>'<div class="dow">'+d+'</div>').join('');
+    for(let i=0;i<off;i++)h+='<div></div>';
+    for(let d=1;d<=days;d++){
+      const dt=new Date(y,m,d),wd=(dt.getDay()+6)%7,full=(d+m)%6===0;
+      const dis=dt<today||wd>4||full;
+      const cls=(full&&wd<5&&dt>=today?'full ':'')+(sel&&iso(sel)===iso(dt)?'sel':'');
+      h+='<button type="button" data-d="'+d+'" class="'+cls+'"'+(dis?' disabled':'')+'>'+d+'</button>';
+    }
+    $('calGrid').innerHTML=h;
+  }
+  $('calGrid').addEventListener('click',e=>{
+    const b=e.target.closest('button[data-d]');if(!b||b.disabled)return;
+    sel=new Date(view.getFullYear(),view.getMonth(),+b.dataset.d);render();upd();
+  });
+  $('calPrev').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()-1,1);render()};
+  $('calNext').onclick=()=>{view=new Date(view.getFullYear(),view.getMonth()+1,1);render()};
+  document.querySelectorAll('.slot').forEach(b=>b.onclick=()=>{
+    slot=b.dataset.slot;document.querySelectorAll('.slot').forEach(x=>x.classList.toggle('sel',x===b));upd();
+  });
+  const dn=['söndag','måndag','tisdag','onsdag','torsdag','fredag','lördag'];
+  function upd(){
+    const t=sel?dn[sel.getDay()]+' '+sel.getDate()+' '+MN[sel.getMonth()].toLowerCase():null;
+    $('bsum').innerHTML=t&&slot?'Din tid: <b>'+t+', '+slot.toLowerCase()+'</b>':t?'Vald dag: <b>'+t+'</b>. Välj nu en tid.':'Välj en dag i kalendern och en tid.';
+    $('bsubmit').disabled=!(sel&&slot);
+  }
+  $('bform').addEventListener('submit',e=>{
+    e.preventDefault();if(!sel||!slot)return;
+    const t=dn[sel.getDay()]+' '+sel.getDate()+' '+MN[sel.getMonth()].toLowerCase();
+    $('bfields').style.display='none';$('bok').style.display='block';
+    $('bokTxt').textContent='Vi återkommer för att bekräfta '+t+' ('+slot.toLowerCase()+'). (Demo: ingen riktig bokning har gjorts.)';
+    const nx=new Date(sel.getFullYear(),sel.getMonth(),sel.getDate()+1);
+    const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Verified by Strand//Demo//SV','BEGIN:VEVENT','UID:'+Date.now()+'@verifiedbystrand-demo',
+      'DTSTAMP:'+new Date().toISOString().replace(/[-:]|\.\d+/g,''),'DTSTART;VALUE=DATE:'+iso(sel).replace(/-/g,''),'DTEND;VALUE=DATE:'+iso(nx).replace(/-/g,''),
+      'SUMMARY:Vinteravstängning av bevattning ('+slot.toLowerCase()+')','END:VEVENT','END:VCALENDAR'].join('\r\n');
+    $('icsBtn').href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));
+  });
+  render();
+})();
+
+// Demo form
+document.getElementById('qform').addEventListener('submit',e=>{
+  e.preventDefault();
+  document.getElementById('fields').style.display='none';
+  document.getElementById('ok').style.display='block';
+});
+</script>
+</body>
+</html>
